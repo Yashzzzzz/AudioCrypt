@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup - AudioCrypt</title>
+    <style>
+        /* Basic Reset */
+        body, h1, label, input, button, p, ul, li {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Body Styling */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            background-image: url('https://wallpaperaccess.com/full/4062591.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        p {
+            line-height: 1.5;
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px;
+            width: 250px;
+            height: 100%;
+            background-color: rgba(25, 1, 61, 0.85);
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        #sidebar.active {
+            left: 0;
+        }
+
+        #sidebar ul {
+            list-style-type: none;
+            padding: 20px;
+            color: white;
+            margin-top: 50px;
+        }
+
+        #sidebar ul li {
+            margin-bottom: 20px;
+        }
+
+        #sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #sidebar ul li a:hover {
+            background-color: #4CAF50;
+        }
+
+        /* Single Container Styling */
+        .container {
+            max-width: 800px;
+            width: 30%;
+            background-color: rgba(96, 89, 89, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            margin: 20px;
+            color: antiquewhite;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #cfcccc;
+        }
+
+        h3 {
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .form {
+            margin-top: 20px;
+        }
+
+        .form label {
+            margin-bottom: 8px;
+            display: block;
+            color: #cfcccc;
+        }
+
+        .form input {
+            width: 85%;
+            padding: 12px;
+            margin: 8px 0;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .form button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            width: 50%;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .form button:hover {
+            background-color: #45a049;
+        }
+
+        p a {
+            text-decoration: none;
+            color: #4CAF50;
+        }
+
+        p a:hover {
+            text-decoration: underline;
+        }
+
+        /* Hamburger Menu Styling */
+        #hamburger-menu {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            color: aliceblue;
+            z-index: 1001;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div id="sidebar">
+            <ul>
+                <li><a href="/login">Login</a></li>
+                <li><a href="/signup">Signup</a></li>
+                <li><a href="/about">About Us</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Signup</h1>
+            <form class="form" method="POST" action="/signup">
+                <label for="username">Username:</label>
+                <input type="text" name="username" id="username" required>
+
+                <label for="password">Password:</label>
+                <input type="password" name="password" id="password" required>
+
+                <label for="confirm_password">Confirm Password:</label>
+                <input type="password" name="confirm_password" id="confirm_password" required>
+
+                <button type="submit">Sign Up</button>
+            </form>
+
+            <p>Already have an account? <a href="/login">Login here</a>.</p>
+        </div>
+
+        <!-- Hamburger Menu Button -->
+        <div id="hamburger-menu">☰</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const hamburgerMenu = document.getElementById('hamburger-menu');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const menuItems = document.querySelectorAll('#sidebar ul li a');
+
+            // Function to toggle the sidebar
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('active');
+                mainContent.classList.toggle('shifted');
+            };
+
+            // Event listener to toggle the sidebar on hamburger menu click
+            hamburgerMenu.addEventListener('click', (event) => {
+                event.stopPropagation();
+                toggleSidebar();
+            });
+
+            // Event listener to close the sidebar when a menu item is clicked
+            menuItems.forEach(item => {
+                item.addEventListener('click', toggleSidebar);
+            });
+
+            // Event listener to close the sidebar when clicking outside of it
+            document.addEventListener('click', (event) => {
+                if (sidebar.classList.contains('active') && !sidebar.contains(event.target) && event.target !== hamburgerMenu) {
+                    toggleSidebar();
+                }
+            });
+        });
+    </script>
+
+    {% if alert_message %}
+    <script>
+        alert("{{ alert_message }}");
+    </script>
+    {% endif %}
+    
+</body>
+</html>

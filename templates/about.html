@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - AudioCrypt</title>
+    <style>
+        /* Basic Reset */
+        body, h1, h3, p {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Layout Styling */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        p {
+            line-height: 1.5;
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px; /* Start with sidebar hidden off-screen */
+            width: 250px;
+            height: 100%;
+            background-color: rgba(25, 1, 61, 0.85);
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+        }
+
+        #sidebar.active {
+            left: 0; /* Slide in sidebar */
+        }
+
+        #sidebar ul {
+            list-style-type: none;
+            padding: 20px;
+            color: white;
+            margin-top: 50px;
+        }
+
+        #sidebar ul li {
+            margin-bottom: 20px;
+        }
+
+        #sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #sidebar ul li a:hover {
+            background-color: #4CAF50;
+        }
+
+        /* Main Content Styling */
+        .main-content {
+            text-align: center;
+            transition: margin-left 0.3s ease;
+            color: antiquewhite;
+        }
+
+        .main-content.shifted {
+            margin-left: 250px; /* Shift content when sidebar is active */
+        }
+
+        /* Hamburger Menu Styling */
+        #hamburger-menu {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            color: white;
+            z-index: 1001;
+        }
+
+        /* Button Styling */
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px;
+            margin: 10px 0;
+            width: 100%;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Container Styling for Main Content */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.29);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #d5c3c3;
+        }
+
+        h3, p,ul {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #c2c2c2;
+        }
+
+        body {
+            background-image: url('https://wallpaperaccess.com/full/4062591.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <ul>
+            <li><a href="/login">Login</a></li>
+            <li><a href="/signup">Signup</a></li>
+            <li><a href="/about">About Us</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <h1>About Us</h1>
+            <p>At AudioCrypt, we believe that privacy and security are fundamental rights. Our mission is to provide you with tools that keep your audio data safe from unauthorized access and ensure that your personal recordings remain private.</p>
+            <p style="text-align: left;">Our application offers:</p>
+            <ul style="text-align: left;" >
+                <li>State-of-the-art encryption methods to secure your audio files.</li>
+                <li>User-friendly design for effortless encryption and decryption.</li>
+            </ul>
+            <p>Join us on our journey to make audio security accessible for everyone.</p>
+            <p>We are here to ensure your peace of mind by safeguarding your audio memories and projects.</p>
+        </div>
+    </div>
+
+    <!-- Hamburger Menu Button -->
+    <div id="hamburger-menu">☰</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const hamburgerMenu = document.getElementById('hamburger-menu');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const menuItems = document.querySelectorAll('#sidebar ul li a');
+
+            // Function to toggle the sidebar
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('active');
+                mainContent.classList.toggle('shifted');
+            };
+
+            // Event listener to toggle the sidebar on hamburger menu click
+            hamburgerMenu.addEventListener('click', (event) => {
+                event.stopPropagation();
+                toggleSidebar();
+            });
+
+            // Event listener to close the sidebar when a menu item is clicked
+            menuItems.forEach(item => {
+                item.addEventListener('click', toggleSidebar);
+            });
+
+            // Event listener to close the sidebar when clicking outside of it
+            document.addEventListener('click', (event) => {
+                if (sidebar.classList.contains('active') && !sidebar.contains(event.target) && event.target !== hamburgerMenu) {
+                    toggleSidebar();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

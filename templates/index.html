@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Encryption</title>
+    <style>
+        /* Basic Reset */
+        body, h1, h3, label, input, button {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Layout Styling */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px; /* Start with sidebar hidden off-screen */
+            width: 250px;
+            height: 100%;
+            background-color: #19013d55;
+            transition: left 0.3s ease;
+            z-index: 1000;
+        }
+
+        #sidebar.active {
+            left: 0; /* Slide in sidebar */
+        }
+
+        #sidebar ul {
+            list-style-type: none;
+            padding: 20px;
+            color: white;
+            margin-top: 50px;
+        }
+
+        #sidebar ul li {
+            margin-bottom: 20px;
+        }
+
+        #sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #sidebar ul li a:hover {
+            background-color: #4CAF50;
+        }
+
+        /* Main Content Styling */
+        .main-content {
+            text-align: center;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.shifted {
+            margin-left: 250px; /* Shift content when sidebar is active */
+        }
+
+        /* Hamburger Menu Styling */
+        #hamburger-menu {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            color: aliceblue;
+        }
+
+        /* Button Styling */
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px;
+            margin: 10px 0;
+            width: 100%;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Container Styling for Main Content */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #faf7f7;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #666;
+        }
+        body {
+            background-image: url('https://wallpaperaccess.com/full/4062591.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <ul>
+            <li><a href="/login">Login</a></li>
+            <li><a href="/signup">Signup</a></li>
+            <li><a href="/about">About Us</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <h1>Welcome to AudioCrypt</h1>
+            <h3>Your personal audio encrypter</h3>
+        </div>
+    </div>
+
+    <!-- Hamburger Menu Button -->
+    <div id="hamburger-menu">☰</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+  const hamburgerMenu = document.getElementById('hamburger-menu');
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.querySelector('.main-content');
+  const menuItems = document.querySelectorAll('#sidebar ul li a');
+
+  // Function to toggle the sidebar
+  const toggleSidebar = () => {
+    sidebar.classList.toggle('active');
+    mainContent.classList.toggle('shifted');
+  };
+
+  // Event listener to toggle the sidebar on hamburger menu click
+  hamburgerMenu.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleSidebar();
+  });
+
+  // Event listener to close the sidebar when a menu item is clicked
+  menuItems.forEach(item => {
+    item.addEventListener('click', toggleSidebar);
+  });
+
+  // Event listener to close the sidebar when clicking outside of it
+  document.addEventListener('click', (event) => {
+    if (sidebar.classList.contains('active') && !sidebar.contains(event.target) && event.target !== hamburgerMenu) {
+      toggleSidebar();
+    }
+  });
+});
+
+    </script>
+</body>
+</html>
