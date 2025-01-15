@@ -1,19 +1,19 @@
 import os
 import time
-from flask import Flask, render_template, request, redirect, url_for, session, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
 from werkzeug.utils import secure_filename
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives.hashes import SHA256
-from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from pymongo import MongoClient
+import bcrypt
 
 # Flask app setup
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app.secret_key ='SECRET_KEY'
 
 # MongoDB setup
 client = MongoClient('mongodb://localhost:27017/')
@@ -52,60 +52,83 @@ def derive_chaotic_key(symmetric_key):
     ).derive(symmetric_key)
     return chaotic_key
 
-def generate_salt():
-    """Generate a random salt for password hashing."""
-    return os.urandom(16)
-
-
-def hash_password(password, salt):
-    """Hash a password using PBKDF2 with SHA256."""
-    kdf = PBKDF2HMAC(
-        algorithm=SHA256(),
-        length=32,
-        salt=salt,
-        iterations=390000,  # Adjust iterations for security needs
-        backend=default_backend()
+def generate_rsa_key_pair():
+    """Generate an RSA key pair."""
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048
     )
-    return kdf.derive(password.encode()) + salt
+    public_key = private_key.public_key()
+    return private_key, public_key
 
+def encrypt_data(data, aes_key, chacha_key, rsa_public_key):
+    """Encrypt data using AES, RSA, and ChaCha20."""
+    try:
+        aes_iv = os.urandom(16)
+        aes_cipher = Cipher(algorithms.AES(aes_key), modes.CFB(aes_iv))
+        aes_encryptor = aes_cipher.encryptor()
+        aes_encrypted = aes_iv + aes_encryptor.update(data) + aes_encryptor.finalize()
 
-def verify_password(hashed_password, salt, password):
-    """Verify a password against a stored hash."""
-    password_to_check = hash_password(password.encode(), salt)
-    return password_to_check == hashed_password
+        rsa_encrypted_aes_key = rsa_public_key.encrypt(
+            aes_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
 
+        chacha_nonce = os.urandom(16)
+        chacha_cipher = Cipher(algorithms.ChaCha20(chacha_key, chacha_nonce), mode=None)
+        chacha_encryptor = chacha_cipher.encryptor()
+        final_encrypted = chacha_nonce + chacha_encryptor.update(rsa_encrypted_aes_key + aes_encrypted)
 
-def encrypt_data(data, key):
-    """Encrypt data using AES in CBC mode."""
-    iv = os.urandom(16)
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
-    encryptor = cipher.encryptor()
-    encrypted_data = encryptor.update(data) + encryptor.finalize()
-    return iv + encrypted_data
+        return final_encrypted
+    except Exception as e:
+        print(f"Encryption failed: {e}")
+        return None
 
+def decrypt_data(encrypted_data, rsa_private_key, chacha_key):
+    """Decrypt data using ChaCha20, RSA, and AES."""
+    try:
+        chacha_nonce = encrypted_data[:16]
+        chacha_encrypted = encrypted_data[16:]
 
-def decrypt_data(encrypted_data, key):
-    """Decrypt data using AES in CBC mode."""
-    iv = encrypted_data[:16]
-    ciphertext = encrypted_data[16:]
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
-    decryptor = cipher.decryptor()
-    decrypted_data = decryptor.update(ciphertext) + decryptor.finalize()
-    return decrypted_data
+        chacha_cipher = Cipher(algorithms.ChaCha20(chacha_key, chacha_nonce), mode=None)
+        chacha_decryptor = chacha_cipher.decryptor()
+        rsa_encrypted_aes_key_and_aes_encrypted = chacha_decryptor.update(chacha_encrypted)
 
+        rsa_encrypted_aes_key = rsa_encrypted_aes_key_and_aes_encrypted[:256]
+        aes_encrypted = rsa_encrypted_aes_key_and_aes_encrypted[256:]
+
+        aes_key = rsa_private_key.decrypt(
+            rsa_encrypted_aes_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+
+        aes_iv = aes_encrypted[:16]
+        aes_ciphertext = aes_encrypted[16:]
+
+        aes_cipher = Cipher(algorithms.AES(aes_key), modes.CFB(aes_iv))
+        aes_decryptor = aes_cipher.decryptor()
+        decrypted_data = aes_decryptor.update(aes_ciphertext) + aes_decryptor.finalize()
+
+        return decrypted_data
+    except Exception as e:
+        print(f"Decryption failed: {e}")
+        return None
 
 def read_file(file_path):
-    """Read the contents of a file."""
     with open(file_path, "rb") as f:
         return f.read()
 
-
 def write_file(file_path, data):
-    """Write data to a file."""
     with open(file_path, "wb") as f:
         f.write(data)
-
-
 
 # Routes
 @app.route('/')
@@ -117,21 +140,38 @@ def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
+        
         # Check if the username already exists in the database
         if users_collection.find_one({'username': username}):
             return render_template('signup.html', alert_message='Username already exists!')
-
-        # Generate a random salt
-        salt = generate_salt()
-
-        # Hash the password using PBKDF2 with SHA256
-        hashed_password = hash_password(password, salt)
-
-        # Store the username and hashed password
-        users_collection.insert_one({'username': username, 'hashed_password': hashed_password, 'salt': salt})
+        
+        # Hash the password before storing it
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        
+        # Generate a unique symmetric key for the user
+        symmetric_key = generate_symmetric_key()
+        
+        # Generate RSA key pair for the user
+        rsa_private_key, rsa_public_key = generate_rsa_key_pair()
+        
+        # Store the username, hashed password, symmetric key, and RSA keys in the database
+        users_collection.insert_one({
+            'username': username,
+            'password': hashed_password,
+            'symmetric_key': symmetric_key.hex(),
+            'rsa_private_key': rsa_private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            ).decode('utf-8'),
+            'rsa_public_key': rsa_public_key.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            ).decode('utf-8')
+        })
+        
         alert_message = 'Account created successfully! Please login.'
-        time.sleep(2)  # Simulate a delay for security (optional)
+        time.sleep(2)
         return redirect(url_for('login'))
     return render_template('signup.html')
 
@@ -144,8 +184,11 @@ def login():
         # Load the user from the database
         user = users_collection.find_one({'username': username})
         
-        if user and user['password'] == password:
+        if user and bcrypt.checkpw(password.encode('utf-8'), user['password']):
             session['username'] = username
+            session['symmetric_key'] = user['symmetric_key']
+            session['rsa_private_key'] = user['rsa_private_key']
+            session['rsa_public_key'] = user['rsa_public_key']
             alert_message = 'Login successful!'
             return redirect(url_for('audio_options'))
         else:
@@ -175,18 +218,20 @@ def audio_encryption():
             file.save(file_path)
 
             original_data = read_file(file_path)
-            symmetric_key = generate_symmetric_key()
+            
+            # Retrieve the symmetric key and RSA public key from session
+            symmetric_key = bytes.fromhex(session.get('symmetric_key'))
+            rsa_public_key = serialization.load_pem_public_key(session.get('rsa_public_key').encode('utf-8'))
             chaotic_key = derive_chaotic_key(symmetric_key)
 
-            encrypted_data = encrypt_data(original_data, symmetric_key, chaotic_key)
-            encrypted_file = os.path.splitext(filename)[0] + ".enc"
-            encrypted_file_path = os.path.join(UPLOAD_FOLDER, encrypted_file)
-            write_file(encrypted_file_path, encrypted_data)
-
-            # Save the symmetric_key to session or a secure storage for later decryption
-            session['symmetric_key'] = symmetric_key.hex()
-
-            return render_template('audio_encryption.html', message="File encrypted successfully!", encrypted_file=encrypted_file)
+            encrypted_data = encrypt_data(original_data, symmetric_key, chaotic_key, rsa_public_key)
+            if encrypted_data:
+                encrypted_file = os.path.splitext(filename)[0] + ".enc"
+                encrypted_file_path = os.path.join(UPLOAD_FOLDER, encrypted_file)
+                write_file(encrypted_file_path, encrypted_data)
+                return render_template('audio_encryption.html', message="File encrypted successfully!", encrypted_file=encrypted_file)
+            else:
+                return render_template('audio_encryption.html', message="Encryption failed!")
         else:
             return render_template('audio_encryption.html', message="Please upload a valid MP3 file!")
     return render_template('audio_encryption.html')
@@ -205,30 +250,32 @@ def audio_decryption():
 
             encrypted_data = read_file(file_path)
 
-            # Retrieve the symmetric key from session (assuming it's saved during encryption)
+            # Retrieve the symmetric key and RSA private key from session
             symmetric_key = bytes.fromhex(session.get('symmetric_key'))
-
+            rsa_private_key = serialization.load_pem_private_key(
+                session.get('rsa_private_key').encode('utf-8'),
+                password=None
+            )
             chaotic_key = derive_chaotic_key(symmetric_key)
 
-            try:
-                decrypted_data = decrypt_data(encrypted_data, symmetric_key, chaotic_key)
+            decrypted_data = decrypt_data(encrypted_data, rsa_private_key, chaotic_key)
+            if decrypted_data:
                 decrypted_file = filename.replace('.enc', '.mp3')
                 decrypted_path = os.path.join(DECRYPTED_FOLDER, decrypted_file)
                 write_file(decrypted_path, decrypted_data)
                 return render_template('audio_decryption.html', message="File decrypted successfully!", decrypted_file=decrypted_file)
-            except ValueError as e:
-                return render_template('audio_decryption.html', message=f"Decryption failed: {e}")
+            else: 
+                return render_template('audio_decryption.html', message="Decryption failed! Please upload the correct file.")
         else:
             return render_template('audio_decryption.html', message="Please upload a valid encrypted file!")
     return render_template('audio_decryption.html')
+
 @app.route('/download/uploads/<filename>')
 def download_upload_file(filename):
     file_path = os.path.join(UPLOAD_FOLDER, filename)
-    print(f"Looking for file at: {file_path}")  # Debugging line
     if not os.path.exists(file_path):
         return "File not found!", 404
     return send_file(file_path, as_attachment=True, mimetype='audio/mp3')
-
 
 @app.route('/download/<filename>')
 def download_file(filename):
@@ -245,3 +292,4 @@ def logout():
 # Run the app
 if __name__ == '__main__':
     app.run(debug=True)
+
