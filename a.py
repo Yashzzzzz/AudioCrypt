@@ -10,10 +10,15 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from pymongo import MongoClient
 import bcrypt
+from itsdangerous import URLSafeTimedSerializer
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Flask app setup
 app = Flask(__name__)
 app.secret_key ='SECRET_KEY'
+s = URLSafeTimedSerializer(app.secret_key)
 
 # MongoDB setup
 client = MongoClient('mongodb://localhost:27017/')
@@ -134,16 +139,76 @@ def write_file(file_path, data):
 @app.route('/')
 def home():
     return render_template('index.html')
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        
+        # Generate a password reset token
+        token = s.dumps(email, salt='password-reset-salt')
+        
+        # Create the email content
+        msg = MIMEMultipart()
+        msg['From'] = 'your_email@example.com'
+        msg['To'] = email
+        msg['Subject'] = 'Password Reset Request'
+        link = url_for('reset_password', token=token, _external=True)
+        msg.attach(MIMEText(f'Click the link to reset your password: {link}', 'plain'))
+        
+        # Send the email
+        try:
+            with smtplib.SMTP('smtp.example.com', 587) as server:
+                server.starttls()
+                server.login('your_email@example.com', 'your_email_password')
+                server.sendmail(msg['From'], msg['To'], msg.as_string())
+            flash('If an account with that email exists, a password reset link has been sent.')
+            time.sleep(2)
+        except Exception as e:
+            flash('An error occurred while sending the email. Please try again later.')
+        return redirect(url_for('login'))
+    
+    return render_template('forgot_password.html')
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    try:
+        email = s.loads(token, salt='password-reset-salt', max_age=3600)
+    except Exception as e:
+        flash('The password reset link is invalid or has expired.')
+        return redirect(url_for('forgot_password'))
+    
+    if request.method == 'POST':
+        new_password = request.form['password']
+        confirm_password = request.form['confirm_password']
+        
+        if new_password != confirm_password:
+            flash('Passwords do not match.')
+            return redirect(url_for('reset_password', token=token))
+        
+        # Hash the new password using bcrypt
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+        
+        # Update the user's password in the database
+        users_collection.update_one({'email': email}, {'$set': {'password': hashed_password}})
+        
+        flash('Your password has been reset successfully.')
+        return redirect(url_for('login'))
+    
+    return render_template('reset_password.html', token=token)
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
+        email=request.form['email']
         # Check if the username already exists in the database
         if users_collection.find_one({'username': username}):
             return render_template('signup.html', alert_message='Username already exists!')
+        
+        if users_collection.find_one({'email': email}):
+            return render_template('signup.html', alert_message='Email already exists!')
         
         # Hash the password before storing it
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
@@ -157,6 +222,7 @@ def signup():
         # Store the username, hashed password, symmetric key, and RSA keys in the database
         users_collection.insert_one({
             'username': username,
+            'email': email,
             'password': hashed_password,
             'symmetric_key': symmetric_key.hex(),
             'rsa_private_key': rsa_private_key.private_bytes(

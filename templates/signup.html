@@ -149,6 +149,15 @@
             color: aliceblue;
             z-index: 1001;
         }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: rgba(169, 231, 247, 0.475);
+        }
 
     </style>
 </head>
@@ -166,9 +175,12 @@
         <!-- Main Content -->
         <div class="main-content">
             <h1>Signup</h1>
-            <form class="form" method="POST" action="/signup">
+            <form class="form" method="POST" action="/signup" onsubmit="return validateForm()">
                 <label for="username">Username:</label>
                 <input type="text" name="username" id="username" required>
+
+                <label for="email">Email:</label>
+                <input type="email" name="email" id="email" required>
 
                 <label for="password">Password:</label>
                 <input type="password" name="password" id="password" required>
@@ -185,8 +197,39 @@
         <!-- Hamburger Menu Button -->
         <div id="hamburger-menu">☰Menu</div>
     </div>
+    <div class="footer">
+        <p>&copy; 2025 AudioCrypt. All rights reserved.</p>
+    </div>
 
     <script>
+        function validateForm() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+
+            // Email validation regex
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            // Password validation regex
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+            if (!emailRegex.test(email)) {
+                alert('Please enter a valid email address.');
+                return false;
+            }
+
+            if (!passwordRegex.test(password)) {
+                alert('Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.');
+                return false;
+            }
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match.');
+                return false;
+            }
+
+            return true;
+        }
         document.addEventListener('DOMContentLoaded', () => {
             const hamburgerMenu = document.getElementById('hamburger-menu');
             const sidebar = document.getElementById('sidebar');

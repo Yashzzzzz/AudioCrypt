@@ -152,6 +152,15 @@
             color: aliceblue;
             z-index: 1001;
         }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: rgba(169, 231, 247, 0.475);
+        }
 
     </style>
 </head>
@@ -174,8 +183,9 @@
                 <input type="text" name="username" id="username" required>
 
                 <label for="password">Password:</label>
+                
                 <input type="password" name="password" id="password" required>
-
+                <p><a href="/forgot-password">Forgot Password?</a></p>
                 <button type="submit">Login</button>
             </form>
 
@@ -184,6 +194,9 @@
 
         <!-- Hamburger Menu Button -->
         <div id="hamburger-menu">☰Menu</div>
+    </div>
+    <div class="footer">
+        <p>&copy; 2025 AudioCrypt. All rights reserved.</p>
     </div>
 
     <script>
