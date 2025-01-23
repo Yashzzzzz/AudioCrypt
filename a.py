@@ -149,7 +149,7 @@ def forgot_password():
         
         # Create the email content
         msg = MIMEMultipart()
-        msg['From'] = 'your_email@example.com'
+        msg['From'] = 'raiyashas05@gmail.com'
         msg['To'] = email
         msg['Subject'] = 'Password Reset Request'
         link = url_for('reset_password', token=token, _external=True)
@@ -157,15 +157,15 @@ def forgot_password():
         
         # Send the email
         try:
-            with smtplib.SMTP('smtp.example.com', 587) as server:
+            with smtplib.SMTP('smtp.gmail.com', 587) as server:
                 server.starttls()
-                server.login('your_email@example.com', 'your_email_password')
+                server.login('raiyashas05@gmail.com', '1810sspr')
                 server.sendmail(msg['From'], msg['To'], msg.as_string())
             flash('If an account with that email exists, a password reset link has been sent.')
             time.sleep(2)
         except Exception as e:
             flash('An error occurred while sending the email. Please try again later.')
-        return redirect(url_for('login'))
+        
     
     return render_template('forgot_password.html')
 
@@ -277,29 +277,32 @@ def audio_encryption():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        file = request.files.get('audio_file')
-        if file and file.filename.endswith('.mp3'):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-            file.save(file_path)
+        files = request.files.getlist('audio_files')
+        encrypted_files = []
+        for file in files:
+            if file and file.filename.endswith('.mp3'):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                file.save(file_path)
 
-            original_data = read_file(file_path)
-            
-            # Retrieve the symmetric key and RSA public key from session
-            symmetric_key = bytes.fromhex(session.get('symmetric_key'))
-            rsa_public_key = serialization.load_pem_public_key(session.get('rsa_public_key').encode('utf-8'))
-            chaotic_key = derive_chaotic_key(symmetric_key)
+                original_data = read_file(file_path)
+                
+                # Retrieve the symmetric key and RSA public key from session
+                symmetric_key = bytes.fromhex(session.get('symmetric_key'))
+                rsa_public_key = serialization.load_pem_public_key(session.get('rsa_public_key').encode('utf-8'))
+                chaotic_key = derive_chaotic_key(symmetric_key)
 
-            encrypted_data = encrypt_data(original_data, symmetric_key, chaotic_key, rsa_public_key)
-            if encrypted_data:
-                encrypted_file = os.path.splitext(filename)[0] + ".enc"
-                encrypted_file_path = os.path.join(UPLOAD_FOLDER, encrypted_file)
-                write_file(encrypted_file_path, encrypted_data)
-                return render_template('audio_encryption.html', message="File encrypted successfully!", encrypted_file=encrypted_file)
+                encrypted_data = encrypt_data(original_data, symmetric_key, chaotic_key, rsa_public_key)
+                if encrypted_data:
+                    encrypted_file = os.path.splitext(filename)[0] + ".enc"
+                    encrypted_file_path = os.path.join(UPLOAD_FOLDER, encrypted_file)
+                    write_file(encrypted_file_path, encrypted_data)
+                    encrypted_files.append(encrypted_file)
+                else:
+                    return render_template('audio_encryption.html', message="Encryption failed for file: " + filename)
             else:
-                return render_template('audio_encryption.html', message="Encryption failed!")
-        else:
-            return render_template('audio_encryption.html', message="Please upload a valid MP3 file!")
+                return render_template('audio_encryption.html', message="Please upload valid MP3 files!")
+        return render_template('audio_encryption.html', message="Files encrypted successfully!", encrypted_files=encrypted_files)
     return render_template('audio_encryption.html')
 
 @app.route('/audio_decryption', methods=['GET', 'POST'])
@@ -308,32 +311,35 @@ def audio_decryption():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        file = request.files.get('encrypted_file')
-        if file and file.filename.endswith('.enc'):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-            file.save(file_path)
+        files = request.files.getlist('encrypted_files')
+        decrypted_files = []
+        for file in files:
+            if file and file.filename.endswith('.enc'):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                file.save(file_path)
 
-            encrypted_data = read_file(file_path)
+                encrypted_data = read_file(file_path)
 
-            # Retrieve the symmetric key and RSA private key from session
-            symmetric_key = bytes.fromhex(session.get('symmetric_key'))
-            rsa_private_key = serialization.load_pem_private_key(
-                session.get('rsa_private_key').encode('utf-8'),
-                password=None
-            )
-            chaotic_key = derive_chaotic_key(symmetric_key)
+                # Retrieve the symmetric key and RSA private key from session
+                symmetric_key = bytes.fromhex(session.get('symmetric_key'))
+                rsa_private_key = serialization.load_pem_private_key(
+                    session.get('rsa_private_key').encode('utf-8'),
+                    password=None
+                )
+                chaotic_key = derive_chaotic_key(symmetric_key)
 
-            decrypted_data = decrypt_data(encrypted_data, rsa_private_key, chaotic_key)
-            if decrypted_data:
-                decrypted_file = filename.replace('.enc', '.mp3')
-                decrypted_path = os.path.join(DECRYPTED_FOLDER, decrypted_file)
-                write_file(decrypted_path, decrypted_data)
-                return render_template('audio_decryption.html', message="File decrypted successfully!", decrypted_file=decrypted_file)
-            else: 
-                return render_template('audio_decryption.html', message="Decryption failed! Please upload the correct file.")
-        else:
-            return render_template('audio_decryption.html', message="Please upload a valid encrypted file!")
+                decrypted_data = decrypt_data(encrypted_data, rsa_private_key, chaotic_key)
+                if decrypted_data:
+                    decrypted_file = filename.replace('.enc', '.mp3')
+                    decrypted_path = os.path.join(DECRYPTED_FOLDER, decrypted_file)
+                    write_file(decrypted_path, decrypted_data)
+                    decrypted_files.append(decrypted_file)
+                else: 
+                    return render_template('audio_decryption.html', message="Decryption failed for file: " + filename)
+            else:
+                return render_template('audio_decryption.html', message="Please upload valid encrypted files!")
+        return render_template('audio_decryption.html', message="Files decrypted successfully!", decrypted_files=decrypted_files)
     return render_template('audio_decryption.html')
 
 @app.route('/download/uploads/<filename>')
@@ -358,4 +364,3 @@ def logout():
 # Run the app
 if __name__ == '__main__':
     app.run(debug=True)
-

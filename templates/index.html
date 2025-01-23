@@ -112,6 +112,15 @@
             font-size: 3.5rem;
             margin-bottom: 20px;
             color: #faf7f7;
+            opacity: 1;
+            animation: typing 3s steps(40, end), blink-caret .75s step-end infinite;
+            white-space: nowrap;
+            overflow: hidden;
+            border-right: .15em solid #faf7f7;
+        }
+
+        h1.completed {
+            border-right: none;
         }
 
         h3 {
@@ -119,6 +128,17 @@
             margin-bottom: 20px;
             color: #666;
         }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: #faf7f7; }
+        }
+
         body {
             background-image: url('https://wallpaperaccess.com/full/4062591.png');
             background-size: cover;
@@ -150,7 +170,7 @@
     <!-- Main Content -->
     <div class="main-content">
         <div class="container">
-            <h1>Welcome to AudioCrypt</h1>
+            <h1 id="welcome-text">Welcome to AudioCrypt</h1>
             <h3>Your Personal Audio Encryption Tool</h3>
         </div>
     </div>
@@ -167,6 +187,7 @@
   const sidebar = document.getElementById('sidebar');
   const mainContent = document.querySelector('.main-content');
   const menuItems = document.querySelectorAll('#sidebar ul li a');
+  const welcomeText = document.getElementById('welcome-text');
 
   // Function to toggle the sidebar
   const toggleSidebar = () => {
@@ -190,6 +211,11 @@
     if (sidebar.classList.contains('active') && !sidebar.contains(event.target) && event.target !== hamburgerMenu) {
       toggleSidebar();
     }
+  });
+
+  // Remove cursor marker after typing animation completes
+  welcomeText.addEventListener('animationend', () => {
+    welcomeText.classList.add('completed');
   });
 });
 

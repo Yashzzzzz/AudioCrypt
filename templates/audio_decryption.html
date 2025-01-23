@@ -136,6 +136,11 @@
             color: #155724;
         }
 
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
         .download-btn {
             background-color: #007bff;
             color: white;
@@ -162,6 +167,15 @@
             color: aliceblue;
             z-index: 1001;
         }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: rgba(169, 231, 247, 0.475);
+        }
 
     </style>
 </head>
@@ -183,16 +197,25 @@
             <h3>Select an Encrypted Audio File to Decrypt</h3>
             
             <form action="/audio_decryption" method="POST" enctype="multipart/form-data">
-                <input type="file" name="encrypted_file" required>
+                <input type="file" name="encrypted_files" multiple required>
                 <button type="submit">Decrypt</button>
             </form>
 
-            {% if decrypted_file %}
-            <div class="message success">
-                <p>File decrypted successfully!</p>
-                <a href="{{ url_for('download_file', filename=decrypted_file) }}" class="download-btn">Download Decrypted File</a>
+            {% if message %}
+            <div class="message {{ 'success' if 'successfully' in message else 'error' }}">
+                <p>{{ message }}</p>
+                {% if decrypted_files %}
+                    <ul>
+                    {% for file in decrypted_files %}
+                        <li><a href="{{ url_for('download_file', filename=file) }}" class="download-btn">Download {{ file }}</a></li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
             </div>
             {% endif %}
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 AudioCrypt. All rights reserved.</p>
         </div>
 
         <!-- Hamburger Menu Button -->

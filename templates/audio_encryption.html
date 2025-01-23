@@ -162,6 +162,20 @@
             z-index: 1001;
         }
 
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: rgba(169, 231, 247, 0.475);
+        }
+
     </style>
 </head>
 <body>
@@ -182,14 +196,20 @@
             <h3>Select an Audio File to Encrypt</h3>
             
             <form action="/audio_encryption" method="POST" enctype="multipart/form-data">
-                <input type="file" name="audio_file" required>
+                <input type="file" name="audio_files" multiple required>
                 <button type="submit" name="action" value="encrypt">Encrypt</button>
             </form>
 
-            {% if encrypted_file %}
-            <div class="message success">
-                <p>File encrypted successfully!</p>
-                <a href="{{ url_for('download_upload_file', filename=encrypted_file) }}" class="download-btn">Download Encrypted File</a>
+            {% if message %}
+            <div class="message {{ 'success' if 'successfully' in message else 'error' }}">
+                <p>{{ message }}</p>
+                {% if encrypted_files %}
+                    <ul>
+                    {% for file in encrypted_files %}
+                        <li><a href="{{ url_for('download_upload_file', filename=file) }}" class="download-btn">Download {{ file }}</a></li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
             </div>
             {% endif %}
         </div>
@@ -197,6 +217,14 @@
         <!-- Hamburger Menu Button -->
         <div id="hamburger-menu">☰Menu</div>
     </div>
+    <div class="footer">
+        <p>&copy; 2025 AudioCrypt. All rights reserved.</p>
+    </div>
+    {% if alert_message %}
+    <script>
+        alert("{{ alert_message }}");
+    </script>
+    {% endif %}
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -231,11 +259,7 @@
         });
     </script>
 
-    {% if alert_message %}
-    <script>
-        alert("{{ alert_message }}");
-    </script>
-    {% endif %}
+    
 
 </body>
 </html>

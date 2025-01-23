@@ -11,6 +11,13 @@
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+        h1{
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: #faf7f7;
+            opacity: 1;
+        }
+        
 
         /* Body Styling */
         body {
@@ -95,7 +102,7 @@
             color: #666;
         }
 
-        .option-button {
+        .option-button , .logout-button {
             display: inline-block;
             margin: 10px;
             padding: 10px 20px;
@@ -111,6 +118,9 @@
         .option-button:hover {
             background-color: #0056b3;
         }
+        .logout-button:hover {
+            background-color: #b32700;
+        }
 
         /* Hamburger Menu Styling */
         #hamburger-menu {
@@ -121,6 +131,15 @@
             font-size: 24px;
             color: aliceblue;
             z-index: 1001;
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: rgba(169, 231, 247, 0.475);
         }
 
     </style>
@@ -140,15 +159,18 @@
         <!-- Main Content -->
         <div class="main-content">
             
-            <h2>What would you like to do?</h2>
+            <h2>What would you like to do today?</h2>
             <a href="/audio_encryption" class="option-button">Audio Encryption</a>
             <a href="/audio_decryption" class="option-button">Audio Decryption</a>
             <br><br>
-            <a href="/logout" class="option-button">Logout</a>
+            <a href="/logout" class="logout-button">Logout</a>
         </div>
 
         <!-- Hamburger Menu Button -->
         <div id="hamburger-menu">☰Menu</div>
+    </div>
+    <div class="footer">
+        <p>&copy; 2025 AudioCrypt. All rights reserved.</p>
     </div>
     
 
